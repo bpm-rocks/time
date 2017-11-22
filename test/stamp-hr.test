@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+
+. bpm
+bpm::include unittest
+unittest::run
+
+unittest::setup() {
+    . ../libtime
+}
+
+unittest::case::stamp-produces-a-number() {
+    local result
+
+    result="did not assign a new value"
+    time::stampHr result
+    [[ "$result" == *.* ]] || return 1
+
+    # Remove the decimal
+    result=${result%.*}
+    [[ "$result" -gt 1500000000 ]] || return 1
+    [[ "$result" -lt 3000000000 ]]
+}
+
+unittest::case::stamp-increments() {
+    local diff first second
+
+    time::stampHr first
+    time::stampHr second
+    time::stampDiff diff "$first" "$second"
+    [[ "${diff%.*}" -lt 1 ]]
+}

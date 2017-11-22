@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+
+. bpm
+bpm::include unittest
+unittest::run
+
+unittest::setup() {
+    . ../libtime
+}
+
+unittest::case::diff-lr-lr() {
+    local result
+
+    result="did not assign a new value"
+    time::stampDiff result 1511380790 1511380792
+    [[ "$result" -eq 2 ]]
+}
+
+unittest::case::diff-lr-hr() {
+    local result
+
+    result="did not assign a new value"
+    time::stampDiff result 1499716539 1499716649.266348007
+    [[ "$result" == "110.266348007" ]]
+}
+
+unittest::case::diff-hr-lr() {
+    local result
+
+    result="did not assign a new value"
+    time::stampDiff result 1511381283.371393164 1511381290
+    [[ "$result" == "6.628606836" ]]
+}
+
+unittest::case::diff-hr-hr() {
+    local result
+
+    result="did not assign a new value"
+    time::stampDiff result 1511381283.371393164 1511381366.952615403
+    [[ "$result" == "83.581222239" ]]
+}

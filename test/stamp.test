@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+
+. bpm
+bpm::include unittest
+unittest::run
+
+unittest::setup() {
+    . ../libtime
+}
+
+unittest::case::stamp-produces-a-number() {
+    local result
+
+    result="did not assign a new value"
+    time::stamp result
+    [[ "$result" -gt 1500000000 ]]
+    [[ "$result" -lt 3000000000 ]]
+}
+
+unittest::case::stamp-increments() {
+    local diff first second
+
+    time::stamp first
+    sleep 1
+    time::stamp second
+    diff=$((second - first))
+
+    [[ "$first" -lt "$second" ]] || return 1
+    [[ "$diff" -gt 0 ]] || return 1
+
+    # Should be 1, but due to load and timing this could be 2 seconds off.
+    [[ "$diff" -lt 3 ]] || return 1
+}

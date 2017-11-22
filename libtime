@@ -1,0 +1,100 @@
+#!/usr/bin/env bash
+
+. bpm
+bpm::include assign
+bpm::include string
+
+
+# Get a timestamp (seconds only).
+#
+# $1 - Destination variable name.
+#
+# Examples
+#
+#   time::stamp seconds
+#   echo "$seconds"   # 1499716539
+#
+# Returns nothing.
+time::stamp() {
+    local "${1-}" && assign::value "$1" "$(date +%s)"
+}
+
+
+# Determine the difference between two timestamps. Works with low resolution
+# and high resolution time stamps.
+#
+# $1 - Destination variable name.
+# $2 - Starting time (the smaller number).
+# $3 - Ending time.
+#
+# The time is limited to an accuracy of 9 digits beyond the decimal point
+# because Bash can be compiled to use 32-bit math, whose limit is a signed
+# 2147483648, easily holding 9 digits. It also works when we have to hold
+# the extra digit from carrying a 1 from the whole numbers.
+#
+# Examples
+#
+#    time::stampDiff result 1499716539 1499716649.266348007
+#    echo "$result"   # 110.266348007
+#
+# Returns nothing.
+time::stampDiff() {
+    local end len start result
+
+    # Adding a dot at the end to ensure we have at least 2 entries in
+    # the resulting arrays.
+    string::split start "${2}." .
+    string::split end "${3}." .
+    len="${#start[1]}"
+
+    if [[ "${#end[1]}" -gt "$len" ]]; then
+        len="${#end[1]}"
+    fi
+
+    # Calculate the seconds of difference.
+    result="$((end[0] - start[0]))"
+
+    # Only calculate this if there are decimals.
+    if [[ "$len" -gt 0 ]]; then
+        # Pad the right side of the strings to make them even.
+        # This simplifies subtraction. printf is not used here because
+        # we could get unreasonably large numbers and we don't want to error.
+        while [[ "${#start[1]}" -lt "$len" ]]; do
+            start[1]+=0
+        done
+
+        while [[ "${#end[1]}" -lt "$len" ]]; do
+            end[1]+=0
+        done
+
+        # Only care about 9 digits after the decimal.
+        # Lead with a "1" to avoid treating numbers like 059141135 as octal.
+        start[1]="1${start[1]:0:9}"
+        end[1]="1${end[1]:0:9}"
+
+        if [[ "${end[1]}" -lt "${start[1]}" ]]; then
+            # Need to borrow from the whole seconds
+            end[1]="2${end[1]:1:9}"
+            result=$((result - 1))
+        fi
+
+        printf -v result "%s.%09d" "$result" "$((end[1] - start[1]))"
+    fi
+    
+    local "${1-}" && assign::value "$1" "$result"
+}
+
+
+# Get a high-resolution timestamp.
+#
+# $1 - Destination variable name.
+#
+# Examples
+#
+#   time::stampHr timestamp
+#   echo "$timestamp"    # 1499716649.266348007
+#
+# Returns nothing.
+time::stampHr() {
+    local "${1-}" && assign::value "$1" "$(date +%s.%N)"
+}
