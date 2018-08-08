@@ -80,7 +80,7 @@ time::stampDiff() {
 
         printf -v result "%s.%09d" "$result" "$((end[1] - start[1]))"
     fi
-    
+
     local "${1-}" && assign::value "$1" "$result"
 }
 
@@ -95,6 +95,14 @@ time::stampDiff() {
 #   echo "$timestamp"    # 1499716649.266348007
 #
 # Returns nothing.
-time::stampHr() {
-    local "${1-}" && assign::value "$1" "$(date +%s.%N)"
-}
+if [[ "$(date +%N)" == "N" ]]; then
+    # BSD version of date. Fall back to Python
+    time::stampHr() {
+        local "${1-}" && assign::value "$1" "$(python -c 'from time import time; print "%.9f" % time();')"
+    }
+else
+    # GNU version of date. Faster.
+    time::stampHr() {
+        local "${1-}" && assign::value "$1" "$(date +%s.%N)"
+    }
+fi
