@@ -2,7 +2,6 @@
 
 . bpm
 bpm::include assign
-bpm::include string
 
 
 # Get a timestamp (seconds only).
@@ -43,8 +42,12 @@ time::stampDiff() {
 
     # Adding a dot at the end to ensure we have at least 2 entries in
     # the resulting arrays.
-    string::split start "${2}." .
-    string::split end "${3}." .
+    start="$2."
+    start=( "${start%%.*}" "${start#*.}" )
+    start[1]="${start[1]%.}"
+    end="$3."
+    end=( "${end%%.*}" "${end#*.}" )
+    end[1]="${end[1]%.}"
     len="${#start[1]}"
 
     if [[ "${#end[1]}" -gt "$len" ]]; then
