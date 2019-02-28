@@ -72,14 +72,19 @@ Calculate the seconds of difference.
 `time::stampHr()`
 -----------------
 
-Get a high-resolution timestamp.
+Get a high-resolution timestamp, at least at millisecond resolution.
 
-* $1 - Destination variable name.
+$1 - Destination variable name.
 
 Examples
 
+    # Bash 3.x and 4.x
     time::stampHr timestamp
     echo "$timestamp"    # 1499716649.266348007
+ 
+    # Bash 5.x (much, much faster)
+    time::stampHr timestamp
+    echo "$timestamp"    # 1551362098.463254
 
 Returns nothing.
 

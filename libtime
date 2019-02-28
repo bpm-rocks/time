@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+# shellcheck disable=SC1091
 . bpm
 bpm::include assign
 
@@ -88,17 +89,28 @@ time::stampDiff() {
 }
 
 
-# Get a high-resolution timestamp.
+# Get a high-resolution timestamp, at least at millisecond resolution.
 #
 # $1 - Destination variable name.
 #
 # Examples
 #
+#   # Bash 3.x and 4.x
 #   time::stampHr timestamp
 #   echo "$timestamp"    # 1499716649.266348007
 #
+#   # Bash 5.x (much, much faster)
+#   time::stampHr timestamp
+#   echo "$timestamp"    # 1551362098.463254
+#
 # Returns nothing.
-if [[ "$(date +%N)" == "N" ]]; then
+if [[ -n "$EPOCHREALTIME" ]]; then
+    # Slightly less precision, significant speed increase
+    # EPOCHREALTIME=1551362098.463254
+    time::stampHr() {
+        local "${1-}" && assign::value "$1" "$EPOCHREALTIME"
+    }
+elif [[ "$(date +%N)" == "N" ]]; then
     # BSD version of date. Fall back to Python
     time::stampHr() {
         local "${1-}" && assign::value "$1" "$(python -c 'from time import time; print "%.9f" % time();')"
