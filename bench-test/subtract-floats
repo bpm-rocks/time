@@ -5,90 +5,70 @@
 bpm::include bench
 . ../libtime
 
-timeStart=1551286158.022758000
-timeEnd=1551286161.639284000
-echo "expected: 3.617 (round up)"
+allTests=(awk bc dc lua node perl php python ruby sqlite3 time::stampDiff)
 
-if hash awk &> /dev/null; then
-    bench::test::awk() {
-        awk "BEGIN{printf \"%.3f\", $timeEnd - $timeStart}" > /dev/null
-    }
-    echo "awk: $(awk "BEGIN{printf \"%.3f\", $timeEnd - $timeStart}")"
-fi
-
-if hash bc &> /dev/null; then
-    # Digits trimmed only with division
-    bench::test::bc() {
-        echo "scale=3; ($timeEnd - $timeStart + 0.0005)/1" | bc -l > /dev/null
-    }
-    echo "bc: $(echo "scale=3; ($timeEnd - $timeStart + 0.0005)/1" | bc -l)"
-fi
-
-if hash dc &> /dev/null; then
-    # Digits trimmed only with division
-    bench::test::dc() {
-        echo "3 k $timeEnd $timeStart - 0.0005 + 1 / p" | dc > /dev/null
-    }
-    echo "dc: $(echo "3 k $timeEnd $timeStart - 0.0005 + 1 / p" | dc)"
-fi
-
-if hash lua &> /dev/null; then
-    bench::test::lua() {
-        lua -e "print(string.format('%.3f', $timeEnd - $timeStart))" > /dev/null
-    }
-    echo "lua: $(lua -e "print(string.format('%.3f', $timeEnd - $timeStart))")"
-fi
-
-if hash node &> /dev/null; then
-    bench::test::node() {
-        node -pe "($timeEnd - $timeStart).toFixed(3)" > /dev/null
-    }
-    echo "node: $(node -pe "($timeEnd - $timeStart).toFixed(3)")"
-fi
-
-if hash perl &> /dev/null; then
-    bench::test::perl() {
-        perl -E "printf('%.3f', $timeEnd - $timeStart)" > /dev/null
-    }
-    echo "perl: $(perl -E "printf('%.3f', $timeEnd - $timeStart)")"
-fi
-
-if hash php &> /dev/null; then
-    bench::test::php() {
-        php -r "echo round($timeEnd - $timeStart, 3);" > /dev/null
-    }
-    echo "php: $(php -r "echo round($timeEnd - $timeStart, 3);")"
-fi
-
-if hash python &> /dev/null; then
-    bench::test::python() {
-        python -c "print round($timeEnd - $timeStart, 3)" > /dev/null
-    }
-    echo "python: $(python -c "print round($timeEnd - $timeStart, 3)")"
-fi
-
-if hash ruby &> /dev/null; then
-    bench::test::ruby() {
-        ruby -e "p ($timeEnd - $timeStart).round(3)" > /dev/null
-    }
-    echo "ruby: $(ruby -e "p ($timeEnd - $timeStart).round(3)")"
-fi
-
-if hash sqlite3 &> /dev/null; then
-    bench::test::sqlite3() {
-        echo "select round($timeEnd - $timeStart, 3)" | sqlite3 > /dev/null
-    }
-    echo "sqlite3: $(echo "select round($timeEnd - $timeStart, 3)" | sqlite3)"
-fi
-
-bench::test::time::stampDiff() {
-    local x
-    time::stampDiff x $timeStart $timeEnd
-    printf -v x "%.3f" "$x"
+test_awk() {
+    awk "BEGIN{printf \"%.3f\", $2 - $1}"
 }
 
-time::stampDiff x $timeStart $timeEnd
-printf -v x "%.3f" "$x"
-echo "time::stampDiff: $x"
+# Digits trimmed only with division
+test_bc() {
+    echo "scale=3; ($2 - $1 + 0.0005)/1" | bc -l
+}
+
+# Digits trimmed only with division
+test_dc() {
+    echo "3 k $2 $1 - 0.0005 + 1 / p" | dc
+}
+
+test_lua() {
+    lua -e "print(string.format('%.3f', $2 - $1))"
+}
+
+test_node() {
+    node -pe "($2 - $1).toFixed(3)"
+}
+
+test_perl() {
+    perl -E "printf('%.3f', $2 - $1)"
+}
+
+test_php() {
+    php -r "echo round($2 - $1, 3);"
+}
+
+test_python() {
+    python -c "print round($2 - $1, 3)"
+}
+
+test_ruby() {
+    ruby -e "p ($2 - $1).round(3)"
+}
+
+test_sqlite3() {
+    echo "select round($2 - $1, 3)" | sqlite3
+}
+
+test_time::stampDiff() {
+    local x
+
+    time::stampDiff x "$1" "$2"
+    printf "%.3f" "$x"
+}
+
+timeStart=1551286158.022758000
+timeEnd1=1551286161.638284000
+timeEnd2=1551286161.639284000
+echo "expected: 3.616 and 3.617 (round down, round up)"
+
+for testName in "${allTests[@]}"; do
+    if hash "$testName" &> /dev/null; then
+        cmd1=("test_${testName}" "$timeStart" "$timeEnd1")
+        cmd2=("test_${testName}" "$timeStart" "$timeEnd2")
+        echo "$testName: $("${cmd1[@]}") $("${cmd2[@]}")"
+
+        eval "bench::test::$testName() { test_$testName $timeStart $timeEnd2 > /dev/null; }"
+    fi
+done
 
 bench::auto
