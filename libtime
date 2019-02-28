@@ -82,7 +82,7 @@ time::stampDiff() {
             result=$((result - 1))
         fi
 
-        printf -v result "%s.%09d" "$result" "$((end[1] - start[1]))"
+        printf -v result "%s.%0${len}d" "$result" "$((end[1] - start[1]))"
     fi
 
     local "${1-}" && assign::value "$1" "$result"
